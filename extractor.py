@@ -15,26 +15,26 @@ if __name__ == '__main__':
                         help='Csv file to be imported')
     args = parser.parse_args()
 
-    with args.csv_file as csv_file:
-        # When used as a context manager, a sqlite connection already commits
-        # the transaction, yet it does not close it. That's why it is used
-        # combined with contextlib.closing
-        db_name = '{}.db'.format(os.path.basename(csv_file.name))
-        with contextlib.closing(sqlite3.connect(db_name)) as conn:
-            with conn as connection:
-                rows = csv.reader(csv_file, skipinitialspace=True)
+    db_name = '{}.db'.format(os.path.basename(args.csv_file.name))
+    # When used as a context manager, a sqlite connection already commits
+    # the transaction, yet it does not close it. That's why it is used
+    # combined with contextlib.closing
+    with args.csv_file as csv_file,\
+        contextlib.closing(sqlite3.connect(db_name)) as conn,\
+        conn as connection:
 
-                cursor = connection.cursor()
-                cursor.execute(""" CREATE TABLE IF NOT EXISTS person (
-                                                time timestamp PRIMARY KEY,
-                                                name varchar NOT NULL,
-                                                age integer
-                                            ); """)
+        rows = csv.reader(csv_file, skipinitialspace=True)
 
-                cursor.executemany('insert or ignore into person values (?,?,?)',
-                                   rows)
+        cursor = connection.cursor()
+        cursor.execute(""" CREATE TABLE IF NOT EXISTS person (
+                                        time timestamp PRIMARY KEY,
+                                        name varchar NOT NULL,
+                                        age integer
+                                    ); """)
 
-                print('{} values inserted'.format(cursor.rowcount))
+        cursor.executemany('insert or ignore into person values (?,?,?)', rows)
 
-                entries = cursor.execute("select count(*) from person").fetchone()[0]
-                print('Total of {} entries'.format(entries))
+        print('{} values inserted'.format(cursor.rowcount))
+
+        entries = cursor.execute("select count(*) from person").fetchone()[0]
+        print('Total of {} entries'.format(entries))
