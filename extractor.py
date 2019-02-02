@@ -27,4 +27,7 @@ if __name__ == '__main__':
                                             ); """)
 
                 cursor.executemany('insert or ignore into person values (?,?,?)', rows)
-                print(cursor.rowcount)
+                print('{} values inserted'.format(cursor.rowcount))
+
+                entries = cursor.execute("select count(*) from person").fetchone()[0]
+                print('Total of {} entries'.format(entries))
