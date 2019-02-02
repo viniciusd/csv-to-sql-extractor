@@ -2,6 +2,7 @@
 
 import argparse
 import contextlib
+import csv
 import os
 import sqlite3
 
@@ -21,16 +22,18 @@ if __name__ == '__main__':
         db_name = '{}.db'.format(os.path.basename(csv_file.name))
         with contextlib.closing(sqlite3.connect(db_name)) as conn:
             with conn as connection:
+                rows = csv.reader(csv_file, skipinitialspace=True)
+
                 cursor = connection.cursor()
-                rows = ([value.strip() for value in line.split(',')]
-                        for line in csv_file)
                 cursor.execute(""" CREATE TABLE IF NOT EXISTS person (
                                                 time timestamp PRIMARY KEY,
                                                 name varchar NOT NULL,
                                                 age integer
                                             ); """)
 
-                cursor.executemany('insert or ignore into person values (?,?,?)', rows)
+                cursor.executemany('insert or ignore into person values (?,?,?)',
+                                   rows)
+
                 print('{} values inserted'.format(cursor.rowcount))
 
                 entries = cursor.execute("select count(*) from person").fetchone()[0]
